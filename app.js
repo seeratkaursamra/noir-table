@@ -536,6 +536,32 @@
     $("#confirmAnotherBtn")?.addEventListener("click", hideConfirmation);
   }
 
+  /* ── Event cards → reservation form ─────────────────────────────────
+     Each event card is an anchor to #reserve. When clicked, we also
+     pre-fill the date input with the event's `data-event-date` so the
+     guest lands on the form already pointed at the right night. The
+     browser handles the smooth scroll via the hash; we just patch
+     the form state right before it. */
+  function initEventCards() {
+    $$(".event-card[data-event-date]").forEach(card => {
+      card.addEventListener("click", () => {
+        const date = card.dataset.eventDate;
+        if (!date) return;
+        const dateInput = $('#reserveForm input[name="date"]');
+        if (!dateInput) return;
+        // If the form is currently hidden behind the confirmation card,
+        // bring the form back so the user sees the prefilled date.
+        const confirm = $("#reserveConfirm");
+        const form    = $("#reserveForm");
+        if (confirm && !confirm.hidden) { confirm.hidden = true; form.hidden = false; }
+        dateInput.value = date;
+        // Trigger a `change` so renderSlots() reruns and the time grid
+        // reflects availability for the chosen date.
+        dateInput.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+    });
+  }
+
   /* ── Toast ──────────────────────────────────────────────────────── */
   let toastTimer = null;
   function showToast(title, body) {
@@ -1192,6 +1218,7 @@
       initForm();
       initMenuModal();
       initConfirmation();
+      initEventCards();
     }
 
     /* Admin page features */
