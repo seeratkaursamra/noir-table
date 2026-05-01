@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="robots" content="noindex,nofollow" />
+    <meta name="description" content="Noir Table — staff reservations dashboard." />
+    <meta name="theme-color" content="#0b0b0c" />
+    <title>Noir Table · Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="icon" type="image/svg+xml" href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="%230b0b0c"/><text x="16" y="22" text-anchor="middle" font-family="Cormorant Garamond, serif" font-size="20" fill="%23c9a86a">N</text></svg>' />
+    <link rel="apple-touch-icon" href="./og-image.png" />
+  </head>
+  <body data-page="admin">
+    <!-- ───────── Admin nav (minimal) ───────── -->
+    <header class="nav nav-admin">
+      <div class="container nav-inner">
+        <a href="./index.html" class="brand" aria-label="Back to Noir Table home">
+          <span class="brand-mark">N</span>
+          <span class="brand-name">NOIR <span class="brand-thin">TABLE</span></span>
+          <span class="admin-pill">ADMIN</span>
+        </a>
+
+        <nav class="nav-links" aria-label="Primary">
+          <a href="./index.html">← Public site</a>
+        </nav>
+
+        <div class="nav-actions">
+          <button id="themeToggle" class="icon-btn" aria-label="Toggle theme" title="Toggle theme">
+            <svg class="icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+          </button>
+          <div id="userChip" class="user-chip" hidden>
+            <span class="user-chip-dot" aria-hidden="true"></span>
+            <span id="userEmail">…</span>
+            <span id="staffPill" class="staff-pill" hidden>STAFF</span>
+            <button id="signOutBtn" class="user-chip-btn" title="Sign out" aria-label="Sign out">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main id="top">
+      <!-- ───────── Auth gate ─────────
+           Shown until staff signs in. Replaces the dashboard. -->
+      <section id="authGate" class="auth-gate" hidden>
+        <div class="auth-gate-card">
+          <p class="eyebrow">Noir Table · Admin</p>
+          <h1>Staff sign-in</h1>
+          <p class="auth-gate-sub">Enter your staff email and password to manage reservations.</p>
+
+          <form id="authForm" class="auth-form" novalidate>
+            <label class="field">
+              <span class="label">Email</span>
+              <input type="email" name="email" autocomplete="email" placeholder="you@noirtable.ca" required />
+            </label>
+            <label class="field">
+              <span class="label">Password</span>
+              <input type="password" name="password" autocomplete="current-password" minlength="6" placeholder="At least 6 characters" required />
+            </label>
+
+            <div class="auth-actions">
+              <button type="submit" class="btn btn-gold btn-lg" data-mode="signin">Sign in</button>
+              <button type="button" class="btn btn-ghost" data-mode="signup" id="signupBtn" hidden>Create account</button>
+            </div>
+
+            <p class="auth-msg" id="authMsg" hidden></p>
+          </form>
+        </div>
+      </section>
+
+      <!-- ───────── Admin Dashboard (auth-gated) ───────── -->
+      <section id="admin" class="admin admin-standalone" hidden>
+        <div class="container">
+          <header class="section-head">
+            <div class="admin-head-row">
+              <div>
+                <p class="eyebrow">House view</p>
+                <h2>Reservations dashboard</h2>
+                <p class="sub" id="adminSub">Confirm bookings, add walk-ins, and manage tonight's seatings.</p>
+              </div>
+
+              <div class="admin-quick-actions">
+                <button id="newBookingBtn" class="btn btn-gold btn-sm" type="button">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  New booking
+                </button>
+                <button id="walkinBtn" class="btn btn-ghost btn-sm" type="button" title="Add a walk-in for right now">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5" r="2"/><path d="M10 22l1-7 4 1-1 6"/><path d="M9 12l-2 5 2-2"/><path d="M14 8l3 3 3-1"/></svg>
+                  Walk-in
+                </button>
+              </div>
+            </div>
+          </header>
+
+          <!-- Search + filter row -->
+          <div class="admin-toolbar" id="adminActions">
+            <div class="admin-search">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input id="adminSearchInput" type="search" placeholder="Search by name or phone…" autocomplete="off" />
+              <button class="search-clear" id="adminSearchClear" type="button" aria-label="Clear search" hidden>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+
+            <div class="filter">
+              <button class="chip is-active" data-filter="all">All</button>
+              <button class="chip" data-filter="today">Today</button>
+              <button class="chip" data-filter="pending">Pending</button>
+              <button class="chip" data-filter="confirmed">Confirmed</button>
+              <button class="chip" data-filter="seated">Seated</button>
+              <button class="chip" data-filter="no-show">No-show</button>
+              <button class="chip" data-filter="cancelled">Cancelled</button>
+            </div>
+
+            <div class="admin-toolbar-secondary">
+              <button id="exportCsv" class="btn btn-ghost btn-sm">Export CSV</button>
+              <button id="seedBtn" class="btn btn-ghost btn-sm" title="Reload sample reservations">Reset demo</button>
+            </div>
+          </div>
+
+          <!-- Staff content -->
+          <div id="adminGated">
+            <div class="admin-stats" id="adminStats"></div>
+            <ul id="adminList" class="res-list"></ul>
+            <p id="adminEmpty" class="empty" hidden>No reservations match this filter.</p>
+          </div>
+
+          <!-- Cloud-mode locked state (shown to signed-in non-staff users) -->
+          <div id="adminLocked" class="empty locked" hidden>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <h3>Not on the staff list yet</h3>
+            <p id="adminLockedMsg">Your account is signed in, but you haven't been promoted to staff. Ask your manager to run <code>select promote_to_staff('you@email.com');</code>.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="container footer-inner">
+        <div class="brand small">
+          <span class="brand-mark">N</span>
+          <span class="brand-name">NOIR <span class="brand-thin">TABLE</span></span>
+          <span class="admin-pill">ADMIN</span>
+        </div>
+        <p>House view · staff only</p>
+        <p class="muted">
+          <a class="staff-link" href="./index.html">← Public site</a>
+        </p>
+      </div>
+    </footer>
+
+    <!-- Toast -->
+    <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
+      <div>
+        <strong id="toastTitle">Reservation confirmed</strong>
+        <span id="toastBody">We'll see you soon.</span>
+      </div>
+    </div>
+
+    <!-- ───────── Booking modal (new + edit) ───────── -->
+    <div id="bookingModal" class="modal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="bookingModalTitle">
+      <div class="modal-backdrop" data-close></div>
+      <div class="modal-card booking-card" role="document">
+        <button class="modal-close" data-close aria-label="Close">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+
+        <p class="eyebrow" id="bookingModalKicker">House view</p>
+        <h2 id="bookingModalTitle">New booking</h2>
+        <p class="auth-sub" id="bookingModalSub">Add a reservation taken over the phone, or seat a walk-in. All fields are required except notes.</p>
+
+        <form id="bookingForm" class="auth-form" novalidate>
+          <input type="hidden" name="id" />
+          <div class="row">
+            <label class="field">
+              <span class="label">Full name</span>
+              <input type="text" name="name" autocomplete="name" placeholder="Ada Marchetti" required minlength="2" />
+              <small class="error" data-error="name"></small>
+            </label>
+            <label class="field">
+              <span class="label">Phone</span>
+              <input type="tel" name="phone" autocomplete="tel" placeholder="(780) 555-0142" required pattern="^[0-9()+\-\s]{7,}$" />
+              <small class="error" data-error="phone"></small>
+            </label>
+          </div>
+
+          <div class="row">
+            <label class="field">
+              <span class="label">Date</span>
+              <input type="date" name="date" required />
+              <small class="error" data-error="date"></small>
+            </label>
+            <label class="field">
+              <span class="label">Time</span>
+              <select name="time" required>
+                <option value="">Select time</option>
+                <option value="5:00 PM">5:00 PM</option>
+                <option value="5:30 PM">5:30 PM</option>
+                <option value="6:00 PM">6:00 PM</option>
+                <option value="6:30 PM">6:30 PM</option>
+                <option value="7:00 PM">7:00 PM</option>
+                <option value="7:30 PM">7:30 PM</option>
+                <option value="8:00 PM">8:00 PM</option>
+                <option value="8:30 PM">8:30 PM</option>
+                <option value="9:00 PM">9:00 PM</option>
+                <option value="9:30 PM">9:30 PM</option>
+                <option value="10:00 PM">10:00 PM</option>
+                <option value="10:30 PM">10:30 PM</option>
+                <option value="11:00 PM">11:00 PM</option>
+              </select>
+              <small class="error" data-error="time"></small>
+            </label>
+          </div>
+
+          <div class="row">
+            <label class="field">
+              <span class="label">Guests</span>
+              <select name="guests" required>
+                <option value="">Party size</option>
+                <option value="1">1 guest</option>
+                <option value="2" selected>2 guests</option>
+                <option value="3">3 guests</option>
+                <option value="4">4 guests</option>
+                <option value="5">5 guests</option>
+                <option value="6">6 guests</option>
+                <option value="7">7 guests</option>
+                <option value="8">8 guests</option>
+                <option value="10">10 guests</option>
+                <option value="12">12 guests</option>
+              </select>
+              <small class="error" data-error="guests"></small>
+            </label>
+            <label class="field">
+              <span class="label">Status</span>
+              <select name="status">
+                <option value="pending">Pending</option>
+                <option value="confirmed" selected>Confirmed</option>
+                <option value="seated">Seated</option>
+                <option value="no-show">No-show</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </label>
+          </div>
+
+          <label class="field">
+            <span class="label">Notes <small class="muted">· internal</small></span>
+            <textarea name="notes" rows="3" maxlength="280" placeholder="VIP · anniversary · allergies · seating preference…"></textarea>
+          </label>
+
+          <p class="auth-msg" id="bookingMsg" hidden></p>
+
+          <div class="form-foot">
+            <button type="button" class="btn btn-ghost" data-close>Cancel</button>
+            <button type="submit" class="btn btn-gold">Save booking</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Supabase JS SDK (UMD build — exposes window.supabase) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./config.js"></script>
+    <script src="./app.js" defer></script>
+  </body>
+</html>
