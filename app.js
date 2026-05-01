@@ -994,7 +994,9 @@
       sub.textContent    = "Update any field below. Changes are saved immediately.";
       form.querySelector('[name="id"]').value     = existing.id;
       form.querySelector('[name="name"]').value   = existing.name || "";
-      form.querySelector('[name="phone"]').value  = existing.phone || "";
+      /* Treat single em-dash as "no phone" so legacy walk-ins open with a
+         clean field instead of an unmanageable placeholder. */
+      form.querySelector('[name="phone"]').value  = (existing.phone === "—") ? "" : (existing.phone || "");
       form.querySelector('[name="date"]').value   = existing.date || todayISO();
       form.querySelector('[name="time"]').value   = existing.time || "";
       form.querySelector('[name="guests"]').value = String(existing.guests || 2);
@@ -1004,7 +1006,7 @@
     } else {
       kicker.textContent = "House view · new";
       title.textContent  = "New booking";
-      sub.textContent    = "Add a reservation taken over the phone, or seat a walk-in. All fields are required except notes.";
+      sub.textContent    = "Add a reservation taken over the phone, or seat a walk-in. Phone and notes are optional.";
       form.querySelector('[name="id"]').value     = "";
       form.querySelector('[name="date"]').value   = todayISO();
       form.querySelector('[name="status"]').value = "confirmed";
@@ -1050,11 +1052,13 @@
   }
 
   function validateBooking(b) {
-    if (!b.name || b.name.length < 2)             return "Please enter the guest's name.";
-    if (!/^[0-9()+\-\s]{7,}$/.test(b.phone || ""))return "Please enter a valid phone number.";
-    if (!b.date)                                  return "Please choose a date.";
-    if (!b.time)                                  return "Please choose a time.";
-    if (!b.guests || b.guests < 1)                return "Please select party size.";
+    if (!b.name || b.name.length < 2)                                      return "Please enter the guest's name.";
+    /* Phone is optional — walk-ins legitimately don't have one. If provided,
+       still validate the format. */
+    if (b.phone && !/^[0-9()+\-\s]{7,}$/.test(b.phone))                    return "Please enter a valid phone number.";
+    if (!b.date)                                                           return "Please choose a date.";
+    if (!b.time)                                                           return "Please choose a time.";
+    if (!b.guests || b.guests < 1)                                         return "Please select party size.";
     return null;
   }
 
@@ -1120,7 +1124,7 @@
     try {
       await db.create({
         name,
-        phone: "—",
+        phone: "",
         date: todayISO(),
         time,
         guests: 2,
