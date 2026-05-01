@@ -89,13 +89,33 @@ In **local mode** the entire `Supabase` block is replaced with a `localStorage`-
 noir-table/
 ├── index.html            Public site — hero, menu modal, reservation form, confirmation card
 ├── admin.html            Staff site — auth gate, dashboard, booking modal
-├── app.js                State, adapters, validation, realtime, status state machine, .ics export
+├── app.js                ES module — UI + adapters (imports ./lib/noir-logic.mjs)
+├── lib/
+│   └── noir-logic.mjs    Pure helpers — time parsing, slot availability, phone rules, event notes
 ├── styles.css            Theme tokens, dark + light modes, components, print styles
 ├── config.js             Supabase URL + anon key (empty → local mode)
 ├── supabase-schema.sql   Tables, indexes, RLS policies, helpers, seed data
+├── tests/
+│   └── noir-logic.test.mjs   Vitest unit tests for lib/noir-logic.mjs
+├── vitest.config.mjs     Vitest config
+├── package.json          npm scripts: `npm test`, `npm run test:watch`
 ├── og-image.png          Open Graph / Twitter card / apple-touch-icon
 └── README.md
 ```
+
+---
+
+## Automated tests
+
+Unit tests cover the **pure booking logic** in `lib/noir-logic.mjs` (time ordering, taken slots, phone validation, event note prefixing). They run in Node — no browser required.
+
+```bash
+npm install    # once
+npm test       # run all tests once
+npm run test:watch   # re-run on file changes (during development)
+```
+
+`app.js` is loaded as `type="module"` and imports `./lib/noir-logic.mjs`. Serve the site over **HTTP** (e.g. `python3 -m http.server`); opening `index.html` via `file://` may block module imports in some browsers.
 
 ---
 
@@ -155,7 +175,7 @@ This is a portfolio project, not a production reservation platform. I deliberate
 | **Rate limiting / CAPTCHA** | The public `INSERT` is open by RLS. For production, gate with Cloudflare Turnstile or a per-IP edge function. |
 | **Privacy policy / terms** | Required when collecting personal data — easy to add as static pages. |
 | **Internationalization** | English only. |
-| **Tests** | No automated suite yet. The dual-mode adapter shape would make unit tests straightforward. |
+| **Tests** | Vitest covers `lib/noir-logic.mjs` only. No browser E2E yet. |
 
 ### What *is* implemented
 
@@ -170,7 +190,7 @@ This is a portfolio project, not a production reservation platform. I deliberate
 - CSV export
 - Dark / light theme with persisted preference
 - Mobile-responsive layout
-- `localStorage` fallback so the demo runs with no backend
+- Vitest unit tests for pure booking helpers (`lib/noir-logic.mjs`)
 - Open Graph / Twitter card meta tags for rich link previews
 
 ---

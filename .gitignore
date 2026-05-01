@@ -15,6 +15,9 @@ npm-debug.log*
 .env.local
 .env.*.local
 
+# Dependencies
+node_modules/
+
 # Local server artifacts
 .cache/
 dist/

@@ -5,6 +5,16 @@
    - Time-slot picker, validation, toast, admin (staff-gated), CSV export
    ──────────────────────────────────────────────────────────────────────── */
 
+import {
+  byDateTime,
+  shortId,
+  parseSlotToDate,
+  isPublicPhoneValid,
+  bookingPhoneErrorMessage,
+  buildEventReservationNotes,
+  takenSlotTimesForDate,
+} from "./lib/noir-logic.mjs";
+
 (function () {
   "use strict";
 
@@ -57,18 +67,6 @@
   const escapeHtml = (s) => String(s).replace(/[&<>"']/g, c => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
   }[c]));
-
-  function parseTime(t) {
-    const m = /^(\d{1,2}):(\d{2})\s*(AM|PM)$/i.exec(t || "");
-    if (!m) return 0;
-    let h = Number(m[1]) % 12;
-    if (m[3].toUpperCase() === "PM") h += 12;
-    return h * 60 + Number(m[2]);
-  }
-  function byDateTime(a, b) {
-    if (a.date !== b.date) return a.date.localeCompare(b.date);
-    return parseTime(a.time) - parseTime(b.time);
-  }
 
   /* ── Backend mode detection ─────────────────────────────────────── */
   const cfg = window.NOIR_CONFIG || {};
@@ -296,12 +294,7 @@
 
   /* ── Time slots ─────────────────────────────────────────────────── */
   function takenTimesForDate(iso) {
-    if (!iso) return new Set();
-    return new Set(
-      reservations
-        .filter(r => r.date === iso && r.status !== "cancelled" && r.status !== "no-show")
-        .map(r => r.time)
-    );
+    return takenSlotTimesForDate(iso, reservations);
   }
 
   function renderSlots() {
@@ -390,7 +383,7 @@
 
     let ok = true;
     if (!data.name || data.name.trim().length < 2) { setError("name", "Please enter your full name."); ok = false; }
-    if (!data.phone || !/^[0-9()+\-\s]{7,}$/.test(data.phone)) { setError("phone", "Enter a reachable phone number."); ok = false; }
+    if (!data.phone?.trim() || !isPublicPhoneValid(data.phone)) { setError("phone", "Enter a reachable phone number."); ok = false; }
     if (!data.date) { setError("date", "Choose a date."); ok = false; }
     else if (data.date < todayISO()) { setError("date", "Pick a date in the future."); ok = false; }
     if (!data.guests) { setError("guests", "Select your party size."); ok = false; }
@@ -409,11 +402,9 @@
     submitBtn.textContent = "Reserving…";
 
     try {
-      /* If we're in event mode, prefix the event name to the notes so
-         staff can identify event RSVPs in the dashboard at a glance. */
       const userNotes = (data.notes || "").trim();
       const finalNotes = activeEvent
-        ? `Event: ${activeEvent.name}${userNotes ? ` — ${userNotes}` : ""}`
+        ? buildEventReservationNotes(activeEvent.name, userNotes)
         : userNotes;
 
       const created = await db.create({
@@ -491,14 +482,6 @@
     form.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  /* Format a UUID-ish string into a shorter, customer-friendly booking number.
-     e.g. "8f2c1a3b-4e5d-..." → "8F2C-1A3B" */
-  function shortId(id) {
-    if (!id) return "—";
-    const clean = String(id).replace(/-/g, "").toUpperCase();
-    return `${clean.slice(0, 4)}-${clean.slice(4, 8)}`;
-  }
-
   /* Build a tiny iCalendar file for the booking and trigger a download.
      Works in any modern browser; no library needed. */
   function downloadIcs(booking) {
@@ -533,17 +516,6 @@
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
-  }
-
-  /* Convert ISO date + slot label like "2026-05-02" + "8:00 PM" → Date */
-  function parseSlotToDate(iso, slot) {
-    const m = slot.match(/(\d+):(\d+)\s*(AM|PM)/i);
-    let h = m ? Number(m[1]) % 12 : 19;
-    if (m && m[3].toUpperCase() === "PM") h += 12;
-    const min = m ? Number(m[2]) : 0;
-    const d = new Date(`${iso}T00:00:00`);
-    d.setHours(h, min, 0, 0);
-    return d;
   }
 
   function initConfirmation() {
@@ -1146,9 +1118,8 @@
 
   function validateBooking(b) {
     if (!b.name || b.name.length < 2)                                      return "Please enter the guest's name.";
-    /* Phone is optional — walk-ins legitimately don't have one. If provided,
-       still validate the format. */
-    if (b.phone && !/^[0-9()+\-\s]{7,}$/.test(b.phone))                    return "Please enter a valid phone number.";
+    const phoneErr = bookingPhoneErrorMessage(b.phone);
+    if (phoneErr)                                                          return phoneErr;
     if (!b.date)                                                           return "Please choose a date.";
     if (!b.time)                                                           return "Please choose a time.";
     if (!b.guests || b.guests < 1)                                         return "Please select party size.";
