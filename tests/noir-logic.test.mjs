@@ -8,7 +8,7 @@ import {
   bookingPhoneErrorMessage,
   buildEventReservationNotes,
   takenSlotTimesForDate,
-} from "../lib/noir-logic.mjs";
+} from "../js/lib/noir-logic.mjs";
 
 describe("parseTime", () => {
   it("parses AM and PM", () => {

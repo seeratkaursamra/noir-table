@@ -4,7 +4,7 @@
 
 A two-surface reservation product — a public site where diners book a table, and a staff dashboard where the host stand runs service. Built with vanilla HTML / CSS / JS, backed by Supabase (Postgres + Auth + Realtime), and degrades gracefully to a fully-functional `localStorage` mode when no backend is configured.
 
-![Noir Table — fine dining reservations, Edmonton AB](./og-image.png)
+![Noir Table — fine dining reservations, Edmonton AB](./assets/og-image.png)
 
 ---
 
@@ -37,7 +37,7 @@ Things in this codebase that are worth a look during a code review:
 - **Status state machine.** `pending → confirmed → seated`, with `no-show` and `cancelled` as terminal states. Each row's available actions are derived from its current status, so the UI cannot drive an illegal transition.
 - **Two-mode admin gate, one component.** The same auth-gate component drives both real Supabase Auth (cloud mode) and a deterministic mocked auth (local mode). Sign-out, session restoration, and the staff pill all behave identically.
 - **Print-quality menu.** The menu modal renders a print-styled view that produces a clean PDF via the browser's native `Cmd-P → Save as PDF` — no PDF library, no server. Open the menu and try it.
-- **No build step, no framework.** Three files: `index.html`, `app.js`, `styles.css`. Loads in one round trip. Lighthouse-friendly.
+- **No build step, no framework.** Entry points are `index.html` and `admin.html` at the repo root; behavior lives under `js/` and `css/`. ES modules, no bundler. Lighthouse-friendly.
 
 ---
 
@@ -64,8 +64,8 @@ Things in this codebase that are worth a look during a code review:
                     │   index.html ── public site  │
                     │   admin.html ── staff site   │
                     │                              │
-                    │   app.js ── one db adapter   │
-                    │             selected at boot │
+                    │   js/app.js — one db adapter   │
+                    │   selected at boot              │
                     └─────────────┬────────────────┘
                                   │
                                   │  cloud mode
@@ -89,17 +89,20 @@ In **local mode** the entire `Supabase` block is replaced with a `localStorage`-
 noir-table/
 ├── index.html            Public site — hero, menu modal, reservation form, confirmation card
 ├── admin.html            Staff site — auth gate, dashboard, booking modal
-├── app.js                ES module — UI + adapters (imports ./lib/noir-logic.mjs)
-├── lib/
-│   └── noir-logic.mjs    Pure helpers — time parsing, slot availability, phone rules, event notes
-├── styles.css            Theme tokens, dark + light modes, components, print styles
 ├── config.js             Supabase URL + anon key (empty → local mode)
 ├── supabase-schema.sql   Tables, indexes, RLS policies, helpers, seed data
+├── assets/
+│   └── og-image.png      Open Graph / Twitter card / apple-touch-icon
+├── css/
+│   └── styles.css        Theme tokens, dark + light modes, components, print styles
+├── js/
+│   ├── app.js            ES module — UI + adapters
+│   └── lib/
+│       └── noir-logic.mjs   Pure helpers — time parsing, slot availability, phone rules, event notes
 ├── tests/
-│   └── noir-logic.test.mjs   Vitest unit tests for lib/noir-logic.mjs
-├── vitest.config.mjs     Vitest config
-├── package.json          npm scripts: `npm test`, `npm run test:watch`
-├── og-image.png          Open Graph / Twitter card / apple-touch-icon
+│   └── noir-logic.test.mjs  Vitest unit tests (imports js/lib/noir-logic.mjs)
+├── vitest.config.mjs
+├── package.json
 └── README.md
 ```
 
@@ -107,7 +110,7 @@ noir-table/
 
 ## Automated tests
 
-Unit tests cover the **pure booking logic** in `lib/noir-logic.mjs` (time ordering, taken slots, phone validation, event note prefixing). They run in Node — no browser required.
+Unit tests cover the **pure booking logic** in `js/lib/noir-logic.mjs` (time ordering, taken slots, phone validation, event note prefixing). They run in Node — no browser required.
 
 ```bash
 npm install    # once
@@ -115,7 +118,7 @@ npm test       # run all tests once
 npm run test:watch   # re-run on file changes (during development)
 ```
 
-`app.js` is loaded as `type="module"` and imports `./lib/noir-logic.mjs`. Serve the site over **HTTP** (e.g. `python3 -m http.server`); opening `index.html` via `file://` may block module imports in some browsers.
+`js/app.js` is loaded as `type="module"` and imports `./lib/noir-logic.mjs` (under `js/`). Serve the site over **HTTP** (e.g. `python3 -m http.server`); opening `index.html` via `file://` may block module imports in some browsers.
 
 ---
 
@@ -175,7 +178,7 @@ This is a portfolio project, not a production reservation platform. I deliberate
 | **Rate limiting / CAPTCHA** | The public `INSERT` is open by RLS. For production, gate with Cloudflare Turnstile or a per-IP edge function. |
 | **Privacy policy / terms** | Required when collecting personal data — easy to add as static pages. |
 | **Internationalization** | English only. |
-| **Tests** | Vitest covers `lib/noir-logic.mjs` only. No browser E2E yet. |
+| **Tests** | Vitest covers `js/lib/noir-logic.mjs` only. No browser E2E yet. |
 
 ### What *is* implemented
 
@@ -190,7 +193,7 @@ This is a portfolio project, not a production reservation platform. I deliberate
 - CSV export
 - Dark / light theme with persisted preference
 - Mobile-responsive layout
-- Vitest unit tests for pure booking helpers (`lib/noir-logic.mjs`)
+- Vitest unit tests for pure booking helpers (`js/lib/noir-logic.mjs`)
 - Open Graph / Twitter card meta tags for rich link previews
 
 ---

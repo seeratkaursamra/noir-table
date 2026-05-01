@@ -1,5 +1,5 @@
 /**
- * Pure reservation helpers — shared by app.js (browser) and Vitest (Node).
+ * Pure reservation helpers — shared by js/app.js (browser) and Vitest (Node).
  * Keep booking rules in sync with the UI by importing these everywhere possible.
  */
 

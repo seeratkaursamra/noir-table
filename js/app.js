@@ -1035,7 +1035,7 @@ import {
 
     $("#menuPrintBtn")?.addEventListener("click", () => {
       // Browser's "Save as PDF" lives inside the print dialog. The print
-      // stylesheet (styles.css @media print) ensures only the menu sheet prints.
+      // stylesheet (css/styles.css @media print) ensures only the menu sheet prints.
       window.print();
     });
   }
