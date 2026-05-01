@@ -12,8 +12,8 @@ A two-surface reservation product — a public site where diners book a table, a
 
 | Surface | URL | Notes |
 | --- | --- | --- |
-| **Public site** | _add your deploy URL_ | Browse the menu, pick a time, book a table. |
-| **Staff dashboard** | _add your deploy URL_`/admin.html` | Inline sign-in gate. Try the credentials below. |
+| **Public site** | <https://noir-table.vercel.app> | Browse the menu, pick a time, book a table. |
+| **Staff dashboard** | <https://noir-table.vercel.app/admin.html> | Inline sign-in gate. Try the credentials below. |
 
 **Demo credentials for the staff dashboard:**
 
