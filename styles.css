@@ -832,6 +832,13 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   text-decoration: line-through;
   text-decoration-color: color-mix(in srgb, var(--slot-taken-text) 80%, transparent);
 }
+/* Event-mode lock — different from "taken" so users don't think
+   someone else booked the slot. No strikethrough; just dimmed. */
+.slot.is-locked {
+  text-decoration: none;
+  opacity: .35;
+}
+.slot.is-locked.is-selected { opacity: 1; }
 .slot.is-selected {
   background: linear-gradient(180deg, var(--gold-soft), var(--gold));
   color: #1a1409;
@@ -980,6 +987,78 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .event-card:hover .event-cta,
 .event-card:focus-visible .event-cta {
   transform: translateX(4px);
+}
+
+/* ───────────────────────────────────────────────────────────────────
+   Event-mode banner inside the reservation form.
+   Shown when the user clicks an event card to reserve a specific
+   event (Chef's Table, Wine Salon, Block Supper).
+   ─────────────────────────────────────────────────────────────────── */
+.event-banner {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 1.1rem 1.25rem;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--gold) 14%, transparent), color-mix(in srgb, var(--gold) 4%, transparent));
+  border: 1px solid color-mix(in srgb, var(--gold) 45%, transparent);
+  border-radius: var(--radius-sm);
+  animation: fadeIn .35s ease both;
+}
+.event-banner-body { flex: 1 1 auto; min-width: 0; }
+.event-banner-body .eyebrow { margin: 0 0 .15rem; }
+.event-banner-body h3 {
+  margin: 0 0 .35rem;
+  font-family: "Cormorant Garamond", serif;
+  font-size: 1.55rem;
+  line-height: 1.15;
+  color: var(--text);
+}
+.event-banner-meta {
+  margin: 0 0 .25rem;
+  font-size: .9rem;
+  color: var(--text-dim);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .35rem;
+}
+.event-banner-price { color: var(--gold); font-weight: 600; }
+.event-banner-tagline {
+  margin: 0;
+  font-size: .85rem;
+  font-style: italic;
+  color: var(--text-mute);
+}
+.event-banner-close {
+  flex: 0 0 auto;
+  appearance: none;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  cursor: pointer;
+  transition: color var(--transition), border-color var(--transition);
+}
+.event-banner-close:hover {
+  color: var(--text);
+  border-color: var(--gold);
+}
+
+/* When the form is in event mode, lock the date and dim the time-slot
+   header to telegraph that they're fixed for this event. */
+.is-event-mode input[name="date"] { opacity: .7; pointer-events: none; }
+.is-event-mode .slots .label::after {
+  content: " · locked to event";
+  color: var(--text-mute);
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: .75rem;
+  margin-left: .5rem;
 }
 
 /* ── Contact ──────────────────────────────────────────────────────── */

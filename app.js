@@ -309,20 +309,29 @@
     if (!grid) return;
     const dateInput = $('input[name="date"]', $("#reserveForm"));
     const taken = takenTimesForDate(dateInput.value);
+    /* When the form is in event mode, every slot other than the
+       event's start time is locked. */
+    const eventTime = activeEvent ? activeEvent.time : null;
 
     grid.innerHTML = "";
     TIME_SLOTS.forEach(t => {
       const isTaken = taken.has(t);
       const isSelected = selectedTime === t;
+      const isLockedByEvent = eventTime && t !== eventTime;
       const btn = document.createElement("button");
       btn.type = "button";
-      btn.className = "slot" + (isTaken ? " is-taken" : "") + (isSelected ? " is-selected" : "");
+      btn.className = "slot"
+        + (isTaken ? " is-taken" : "")
+        + (isSelected ? " is-selected" : "")
+        + (isLockedByEvent ? " is-locked" : "");
       btn.textContent = t;
       btn.setAttribute("role", "radio");
       btn.setAttribute("aria-checked", String(isSelected));
-      if (isTaken) {
+      if (isTaken || isLockedByEvent) {
         btn.disabled = true;
-        btn.title = "This time is already taken";
+        btn.title = isLockedByEvent
+          ? "This event has a single fixed seating"
+          : "This time is already taken";
       } else {
         btn.addEventListener("click", () => {
           selectedTime = t;
@@ -400,13 +409,20 @@
     submitBtn.textContent = "Reserving…";
 
     try {
+      /* If we're in event mode, prefix the event name to the notes so
+         staff can identify event RSVPs in the dashboard at a glance. */
+      const userNotes = (data.notes || "").trim();
+      const finalNotes = activeEvent
+        ? `Event: ${activeEvent.name}${userNotes ? ` — ${userNotes}` : ""}`
+        : userNotes;
+
       const created = await db.create({
         name: data.name.trim(),
         phone: data.phone.trim(),
         date: data.date,
         time: selectedTime,
         guests: Number(data.guests),
-        notes: (data.notes || "").trim(),
+        notes: finalNotes,
       });
       // Local mode: refresh from store. Cloud mode: realtime will fire too,
       // but refresh ensures the user sees their booking instantly.
@@ -415,6 +431,9 @@
       form.reset();
       selectedTime = null;
       $('input[name="date"]', form).value = addDaysISO(todayISO(), 2);
+      // Exit event mode after a successful submit so subsequent bookings
+      // are regular reservations again.
+      if (activeEvent) exitEventMode();
       renderSlots();
     } catch (err) {
       if (err.code === "slot_taken") {
@@ -536,30 +555,78 @@
     $("#confirmAnotherBtn")?.addEventListener("click", hideConfirmation);
   }
 
-  /* ── Event cards → reservation form ─────────────────────────────────
-     Each event card is an anchor to #reserve. When clicked, we also
-     pre-fill the date input with the event's `data-event-date` so the
-     guest lands on the form already pointed at the right night. The
-     browser handles the smooth scroll via the hash; we just patch
-     the form state right before it. */
+  /* ── Event mode (Chef's Table, Wine Salon, Block Supper) ───────────
+     Clicking an event card flips the reservation form into "event
+     mode": the banner up top announces the event, the date is locked
+     to the event date, the time is locked to the event time, and on
+     submit the booking gets tagged in `notes` so staff can see at a
+     glance it's an event RSVP rather than a regular dinner. */
+  let activeEvent = null;
+
   function initEventCards() {
     $$(".event-card[data-event-date]").forEach(card => {
-      card.addEventListener("click", () => {
-        const date = card.dataset.eventDate;
-        if (!date) return;
-        const dateInput = $('#reserveForm input[name="date"]');
-        if (!dateInput) return;
-        // If the form is currently hidden behind the confirmation card,
-        // bring the form back so the user sees the prefilled date.
-        const confirm = $("#reserveConfirm");
-        const form    = $("#reserveForm");
-        if (confirm && !confirm.hidden) { confirm.hidden = true; form.hidden = false; }
-        dateInput.value = date;
-        // Trigger a `change` so renderSlots() reruns and the time grid
-        // reflects availability for the chosen date.
-        dateInput.dispatchEvent(new Event("change", { bubbles: true }));
-      });
+      card.addEventListener("click", () => enterEventMode({
+        name:    card.dataset.eventName    || "",
+        date:    card.dataset.eventDate    || "",
+        time:    card.dataset.eventTime    || "",
+        price:   card.dataset.eventPrice   || "",
+        tagline: card.dataset.eventTagline || "",
+      }));
     });
+    $("#eventBannerClose")?.addEventListener("click", exitEventMode);
+  }
+
+  function enterEventMode(ev) {
+    if (!ev || !ev.date || !ev.time) return;
+    activeEvent = ev;
+
+    // Bring the form back if the confirmation card is currently shown.
+    const form    = $("#reserveForm");
+    const confirm = $("#reserveConfirm");
+    if (confirm && !confirm.hidden) { confirm.hidden = true; form.hidden = false; }
+
+    // Reveal + populate the banner.
+    $("#eventBanner").hidden          = false;
+    $("#eventBannerName").textContent = ev.name;
+    $("#eventBannerDate").textContent = formatDate(ev.date);
+    $("#eventBannerTime").textContent = ev.time;
+    $("#eventBannerPrice").textContent = ev.price;
+    $("#eventBannerTagline").textContent = ev.tagline;
+
+    // Lock the date input to the event date.
+    const dateInput = $('#reserveForm input[name="date"]');
+    dateInput.value = ev.date;
+
+    // Lock the time selection to the event time. renderSlots() reads
+    // `activeEvent` and disables every non-event slot automatically.
+    selectedTime = ev.time;
+    renderSlots();
+
+    // Visual lock state (CSS hooks via .is-event-mode).
+    document.body.classList.add("is-event-mode");
+
+    // Update the section heading + submit button copy so the user
+    // understands what they're booking.
+    const heading = document.querySelector('#reserve .section-head h2');
+    if (heading) heading.textContent = `Reserve · ${ev.name}`;
+    const submitBtn = $('#reserveForm button[type="submit"]');
+    if (submitBtn) submitBtn.textContent = "Reserve my seat";
+  }
+
+  function exitEventMode() {
+    activeEvent = null;
+    $("#eventBanner").hidden = true;
+    document.body.classList.remove("is-event-mode");
+
+    // Restore generic copy.
+    const heading = document.querySelector('#reserve .section-head h2');
+    if (heading) heading.textContent = "Make a reservation";
+    const submitBtn = $('#reserveForm button[type="submit"]');
+    if (submitBtn) submitBtn.textContent = "Reserve my table";
+
+    // Re-enable all time slots; reset selection.
+    selectedTime = null;
+    renderSlots();
   }
 
   /* ── Toast ──────────────────────────────────────────────────────── */

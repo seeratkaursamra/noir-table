@@ -146,6 +146,26 @@
           <div class="reserve-grid">
             <!-- Form -->
             <form id="reserveForm" class="card form" novalidate>
+              <!-- Event mode banner — populated and revealed when an
+                   event card is clicked. Hidden by default. -->
+              <aside id="eventBanner" class="event-banner" hidden>
+                <div class="event-banner-body">
+                  <p class="eyebrow" id="eventBannerKicker">Reserving for</p>
+                  <h3 id="eventBannerName">—</h3>
+                  <p class="event-banner-meta">
+                    <span id="eventBannerDate">—</span>
+                    <span class="dotsep">·</span>
+                    <span id="eventBannerTime">—</span>
+                    <span class="dotsep">·</span>
+                    <span class="event-banner-price" id="eventBannerPrice">—</span>
+                  </p>
+                  <p class="event-banner-tagline" id="eventBannerTagline">—</p>
+                </div>
+                <button type="button" class="event-banner-close" id="eventBannerClose" aria-label="Cancel event reservation, return to regular booking">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+              </aside>
+
               <div class="row">
                 <label class="field">
                   <span class="label">Full name</span>
@@ -255,21 +275,39 @@
       <!-- ───────── Events ───────── -->
       <section id="events" class="events">
         <div class="container events-inner">
-          <a class="event-card" href="#reserve" data-event-date="2026-05-18" aria-label="Reserve a seat at Chef's Table — Alberta Spring on May 18">
+          <a class="event-card" href="#reserve"
+             data-event-name="Chef's Table — Alberta Spring"
+             data-event-date="2026-05-18"
+             data-event-time="7:00 PM"
+             data-event-price="$185 / guest"
+             data-event-tagline="Eight-seat counter · 9 courses · Alberta wines"
+             aria-label="Reserve a seat at Chef's Table — Alberta Spring on May 18">
             <p class="eyebrow">May 18 · Sunday</p>
             <h3>Chef's Table — Alberta Spring</h3>
             <p>An eight-seat counter dinner with Chef Okafor. 9 courses, Alberta wines.</p>
             <span class="price">$185 / guest</span>
             <span class="event-cta">Reserve →</span>
           </a>
-          <a class="event-card" href="#reserve" data-event-date="2026-06-06" aria-label="Reserve a seat at Natural Wine Salon on June 6">
+          <a class="event-card" href="#reserve"
+             data-event-name="Natural Wine Salon"
+             data-event-date="2026-06-06"
+             data-event-time="8:00 PM"
+             data-event-price="$95 / guest"
+             data-event-tagline="Low-intervention pours · Bar bites · BC &amp; the Okanagan"
+             aria-label="Reserve a seat at Natural Wine Salon on June 6">
             <p class="eyebrow">June 6 · Friday</p>
             <h3>Natural Wine Salon</h3>
             <p>Low-intervention pours from BC &amp; the Okanagan, paired with bar bites.</p>
             <span class="price">$95 / guest</span>
             <span class="event-cta">Reserve →</span>
           </a>
-          <a class="event-card" href="#reserve" data-event-date="2026-07-12" aria-label="Reserve a seat at Whyte Ave Block Supper on July 12">
+          <a class="event-card" href="#reserve"
+             data-event-name="Whyte Ave Block Supper"
+             data-event-date="2026-07-12"
+             data-event-time="6:00 PM"
+             data-event-price="$120 / guest"
+             data-event-tagline="Long-table patio dinner · Family-style sharing menu"
+             aria-label="Reserve a seat at Whyte Ave Block Supper on July 12">
             <p class="eyebrow">July 12 · Saturday</p>
             <h3>Whyte Ave Block Supper</h3>
             <p>A long-table communal dinner on the patio. Family-style sharing menu.</p>
